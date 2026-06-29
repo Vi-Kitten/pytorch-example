@@ -16,6 +16,7 @@
                     packages = with pkgs; [
                         (python3.withPackages (py_pkgs: with py_pkgs; [
                             torch
+                            torchvision
                             polars
                             marimo
                             numpy
