@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from pathlib import Path
 from itertools import islice
 
@@ -33,11 +34,11 @@ loss_fn = nn.CrossEntropyLoss()
 learning_rate = 1e-2
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-epochs = 24
+epochs = 120
 train_losses = []
 test_losses = []
 
-test_batches = 32
+test_batches = 100
 
 def datapoint(epoch):
     with torch.no_grad():
@@ -67,6 +68,7 @@ def datapoint(epoch):
 datapoint(0)
 
 # training loop
+era_times = [0]
 target_loss = float("inf")
 prev_loss = float("inf")
 for epoch in range(1, epochs + 1):
@@ -86,6 +88,7 @@ for epoch in range(1, epochs + 1):
     loss = total_loss / len(train_loader)
     if loss > prev_loss:
         if prev_loss < target_loss:
+            era_times.append(epoch)
             learning_rate /= 2.0
             optimizer.param_groups[0]["lr"] = learning_rate
             target_loss = prev_loss
@@ -93,6 +96,7 @@ for epoch in range(1, epochs + 1):
 
     # scrumptious data:
     datapoint(epoch)
+era_times.append(epochs)
 
 # full evaluation
 sum_score = 0.0
@@ -108,17 +112,24 @@ img_path = "./training.png"
 plt.figure(figsize=(8, 5))
 plt.plot(train_losses, label="train")
 plt.plot(test_losses, label="test")
+for era_start, era_end, n in zip(era_times, era_times[1:], range(len(era_times))):
+    if n % 2 == 0:
+        plt.axvspan(era_start, era_end, color="white", alpha=0.25)
+    else:
+        plt.axvspan(era_start, era_end, color="grey", alpha=0.25)
 plt.xlabel("Epoch")
+plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
 plt.ylabel("Cross entropy loss")
 plt.yscale("log")
 plt.title("Aprox. Training and Test loss")
 plt.legend()
 plt.figtext(
     0.5, -0.03,
-    f"avg confidence in correct answer on test: {score:.1%}",
+    f"avg confidence in correct class: {score:.4%}",
     ha="center", va="top",
     fontsize=10,
 )
+print(f"Finished training with confidence in correct class of: {score:.4%}")
 plt.grid(True, alpha=0.3)
 plt.savefig(img_path, dpi=120, bbox_inches="tight")
 print(f"Saved loss curve to {img_path}")
