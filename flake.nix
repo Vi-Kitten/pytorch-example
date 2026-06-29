@@ -13,8 +13,8 @@
                 pkgs = import nixpkgs { inherit system; };
             in {
                 default = pkgs.mkShell {
-                    packages = [
-                        (pkgs.python3.withPackages (py_pkgs: with py_pkgs; [
+                    packages = with pkgs; [
+                        (python3.withPackages (py_pkgs: with py_pkgs; [
                             torch
                             polars
                             marimo
@@ -24,6 +24,8 @@
                             datasets
                             tokenizers
                         ]))
+                        pyright
+                        ruff
                     ];
                 };
             }
